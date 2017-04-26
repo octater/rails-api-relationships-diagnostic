@@ -5,7 +5,8 @@ Place your responses inside the fenced code-blocks where indivated by comments.
 1.  Describe a reason why a join tables may be valuable.
 
   ```md
-    # < Your Response Here >
+    it keeps the data normalized.  all data in one table can lead to a bad
+    design for sure.
   ```
 
 1.  Provide a database table structure and explain the Entity Relationship that
@@ -15,23 +16,52 @@ Place your responses inside the fenced code-blocks where indivated by comments.
   join table with references to `Movies` and `Profiles`.
 
   ```md
-    # < Your Response Here >
+  CREATE TABLE Profiles(
+    id SERIAL PRIMARY KEY,
+    given_name TEXT,
+    surname TEXT
+  );
+
+  CREATE TABLE Movies(
+    id SERIAL PRIMARY KEY,
+    title TEXT,
+    release_date  DATE,
+    length FLOAT
+    );
+
+ CREATE TABLE Favorites(
+    id SERIAL PRIMARY KEY,
+    profile_id INTEGER REFERENCES Profiles(id),
+    movie_id INTEGER REFERENCES Movies(id)
+  );
+  CREATE INDEX ON Favorites(profile_id);
+  CREATE INDEX ON Favorites(movie_id);
+
+  The Profiles table joins the Movie table to the Favorites table by have both
+  the id fields of both tables as data
+
   ```
 
 1.  For the above example, what needs to be added to the Model files?
 
   ```rb
   class Profile < ActiveRecord::Base
+    has_many :movie, through: :favorite
+    has_many :favorite, dependent: :destroy
   end
   ```
 
   ```rb
   class Movie < ActiveRecord::Base
+    has_many :profile, through: :favorite
+    has_many :favorite, dependent: :destroy
   end
   ```
 
   ```rb
   class Favorite < ActiveRecord::Base
+    belongs_to :movie, inverse_of: :favorite
+    belongs_to :profile, inverse_of: :favorite
   end
   ```
 
@@ -40,11 +70,13 @@ like to show all movies favorited by a profile on
 `http://localhost:3000/profiles/1`
 
   ```md
-    # < Your Response Here >
+    The serializer allows you to filter certain data out of your response. The
+    data still exists, it's just not shown in the response to users.
   ```
 
   ```rb
   class ProfileSerializer < ActiveModel::Serializer
+    attributes :id, :given_name, :surname, :movie
   end
   ```
 
@@ -52,13 +84,14 @@ like to show all movies favorited by a profile on
 the above `Movies` and `Profiles`.
 
   ```sh
-    # < Your Response Here >
+    bin/rails generate scaffold favorite movie:references profile:references
   ```
 
 1.  What is `Dependent: Destroy` and where/why would we use it?
 
   ```md
-    # < Your Response Here >
+    It tells Rails what to do with the joined item when deleting an item. Simular to
+    delete cascade on the db table
   ```
 
 1.  Think of **ANY** example where you would have a one-to-many relationship as well
